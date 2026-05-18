@@ -249,4 +249,4 @@ Express Gateway mengimplementasikan circuit breaker sederhana:
 
 # LINK REPO GITHUB
 
-Kompetisi Kaggle — [Titanic: Machine Learning from Disaster](https://www.kaggle.com/c/titanic)
+[Titanic: Machine Learning](https://github.com/Nonom0no/titanic-ml.git)
