@@ -1,0 +1,331 @@
+{
+  "info": {
+    "_postman_id": "titanic-ml-service-collection",
+    "name": "Titanic ML Service — Pertemuan 11",
+    "description": "Koleksi request untuk Express Gateway (port 3000) dan FastAPI ML Service (port 8000). \n\n**Urutan penggunaan:**\n1. Jalankan 'Login Express Gateway' → token otomatis tersimpan ke variable `express_token`\n2. Gunakan endpoint `/api/*` — token sudah otomatis terpasang\n3. Untuk akses langsung ke FastAPI, jalankan 'Login FastAPI ML' terlebih dahulu",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "express_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "ml_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "express_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ml_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Express Gateway",
+      "item": [
+        {
+          "name": "Login Express Gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.access_token) {",
+                  "    pm.collectionVariables.set('express_token', res.access_token);",
+                  "    pm.test('Token berhasil disimpan', () => pm.expect(res.access_token).to.be.a('string'));",
+                  "} else {",
+                  "    pm.test('Login gagal', () => { throw new Error('Tidak ada access_token'); });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mahasiswa\",\n  \"password\": \"alitkicau\"\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/auth/login",
+              "host": ["{{express_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login ke Express Gateway. Password default: `alitkicau`. Token otomatis tersimpan ke variable `express_token`."
+          },
+          "response": [
+            {
+              "name": "Login berhasil",
+              "originalRequest": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"mahasiswa\",\n  \"password\": \"alitkicau\"\n}"
+                },
+                "url": { "raw": "{{express_url}}/auth/login" }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"token_type\": \"bearer\"\n}"
+            },
+            {
+              "name": "Login gagal",
+              "originalRequest": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"mahasiswa\",\n  \"password\": \"salah\"\n}"
+                },
+                "url": { "raw": "{{express_url}}/auth/login" }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"error\": \"Kredensial salah\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Predict Single (via Gateway)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{express_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": [3, 0, 22, 1, 0, 7.25]\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "predict"]
+            },
+            "description": "Prediksi satu penumpang via Express Gateway.\n\n**features:** `[Pclass, Sex, Age, SibSp, Parch, Fare]`\n\nContoh ini: penumpang kelas 3, laki-laki, 22 tahun → Jack Dawson dari film Titanic"
+          },
+          "response": [
+            {
+              "name": "Prediksi berhasil",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"user\": \"mahasiswa\",\n  \"result\": {\n    \"prediction\": 0,\n    \"label\": \"Tidak Selamat\",\n    \"confidence\": 0.87,\n    \"cached\": false,\n    \"service\": \"python-ml-fastapi\"\n  },\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Predict Single — Kemungkinan Selamat",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{express_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": [1, 1, 29, 0, 0, 211.34]\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "predict"]
+            },
+            "description": "Prediksi penumpang dengan profil kemungkinan selamat tinggi.\n\nKelas 1, perempuan, 29 tahun, tiket mahal — mirip profil Rose dari film Titanic"
+          }
+        },
+        {
+          "name": "Batch Predict (via Gateway)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{express_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"features\": [3, 0, 22, 1, 0, 7.25] },\n    { \"features\": [1, 1, 29, 0, 0, 211.34] },\n    { \"features\": [2, 0, 35, 0, 0, 26.0] },\n    { \"features\": [3, 1, 18, 0, 1, 14.45] }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/batch-predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "batch-predict"]
+            },
+            "description": "Prediksi banyak penumpang sekaligus. Mengirim array of features."
+          },
+          "response": [
+            {
+              "name": "Batch berhasil",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"user\": \"mahasiswa\",\n  \"results\": [\n    { \"prediction\": 0, \"label\": \"Tidak Selamat\", \"confidence\": 0.87, \"cached\": false, \"service\": \"python-ml-fastapi\" },\n    { \"prediction\": 1, \"label\": \"Selamat\", \"confidence\": 0.91, \"cached\": false, \"service\": \"python-ml-fastapi\" },\n    { \"prediction\": 0, \"label\": \"Tidak Selamat\", \"confidence\": 0.75, \"cached\": false, \"service\": \"python-ml-fastapi\" },\n    { \"prediction\": 1, \"label\": \"Selamat\", \"confidence\": 0.82, \"cached\": false, \"service\": \"python-ml-fastapi\" }\n  ],\n  \"total\": 4,\n  \"timestamp\": \"2024-01-15T10:31:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "ML Health Check (via Gateway)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{express_token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{express_url}}/api/ml-health",
+              "host": ["{{express_url}}"],
+              "path": ["api", "ml-health"]
+            },
+            "description": "Cek apakah ML service sedang berjalan dan Redis terhubung."
+          }
+        },
+        {
+          "name": "Predict — Validasi Gagal (features salah)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{express_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": [5, 0, 22, 1, 0, 7.25]\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "predict"]
+            },
+            "description": "Test validasi: Pclass=5 di luar range (1-3), seharusnya return 400."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🐍 FastAPI ML Service (Langsung)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{ml_url}}/health",
+              "host": ["{{ml_url}}"],
+              "path": ["health"]
+            },
+            "description": "Cek status ML service dan koneksi Redis."
+          },
+          "response": [
+            {
+              "name": "Service OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ok\",\n  \"service\": \"python-ml-fastapi\",\n  \"cache\": \"connected\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login FastAPI ML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.access_token) {",
+                  "    pm.collectionVariables.set('ml_token', res.access_token);",
+                  "    pm.test('ML Token tersimpan', () => pm.expect(res.access_token).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"alitkicau\"\n}"
+            },
+            "url": {
+              "raw": "{{ml_url}}/auth/token",
+              "host": ["{{ml_url}}"],
+              "path": ["auth", "token"]
+            },
+            "description": "Login langsung ke FastAPI. Password default: `alitkicau`."
+          }
+        },
+        {
+          "name": "Predict Langsung ke FastAPI",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{ml_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": [3, 0, 22, 1, 0, 7.25],\n  \"user_id\": \"test-user-001\"\n}"
+            },
+            "url": {
+              "raw": "{{ml_url}}/predict",
+              "host": ["{{ml_url}}"],
+              "path": ["predict"]
+            },
+            "description": "Panggil ML service langsung tanpa melalui Express Gateway."
+          }
+        },
+        {
+          "name": "Batch Predict Langsung ke FastAPI",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{ml_token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"features\": [1, 1, 29, 0, 0, 211.34] },\n    { \"features\": [3, 0, 22, 1, 0, 7.25] }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{ml_url}}/batch-predict",
+              "host": ["{{ml_url}}"],
+              "path": ["batch-predict"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
